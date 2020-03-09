@@ -1,0 +1,5 @@
+#cloud-config
+hostname: {{ instance_name|lower }}
+password: {{ password }}
+chpasswd: { expire: False }
+ssh_pwauth: True

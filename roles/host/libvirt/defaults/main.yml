@@ -1,0 +1,12 @@
+packages:
+- qemu-kvm
+- libvirt-daemon
+- libvirt-daemon-system
+- libvirt-clients
+- cloud-image-utils
+- python-libvirt
+
+storage: /home/libvirt
+
+images:
+- https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img

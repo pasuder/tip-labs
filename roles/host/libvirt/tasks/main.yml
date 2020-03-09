@@ -1,0 +1,26 @@
+- name: Update packages list and upgrade if needed
+  apt:
+    update_cache: yes
+    upgrade: yes
+  tags: ['never', 'prepare']
+
+- name: Install packages
+  apt:
+    name: "{{ packages }}"
+  tags: ['never', 'prepare']
+
+- name: Prepare for virtual machines
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+  - "{{ storage }}"
+  - "{{ storage }}/_base"
+  tags: ['never', 'prepare']
+
+- name: Download images for virtual machines
+  command: wget -c "{{ item }}" -O "{{ storage }}/_base/{{ item.split('/')[-1] }}"
+  with_items: "{{ images }}"
+  args:
+    warn: false
+  tags: ['never', 'prepare']

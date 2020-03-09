@@ -1,0 +1,54 @@
+- name: Prepare seed with username and password
+  template:
+    src: seed.j2
+    dest: "{{ storage }}/seed_{{ instance_name|lower }}"
+  tags: ['never', 'boot']
+
+- name: Generate image from seed
+  command: cloud-localds seed_{{ instance_name|lower }}.img seed_{{ instance_name|lower }}
+  args:
+    chdir: "{{ storage }}"
+  tags: ['never', 'boot']
+
+- name: Copy base image
+  copy:
+    src: "{{ storage }}/_base/{{ image }}"
+    dest: "{{ storage }}/{{ instance_name|lower }}.img"
+    remote_src: yes
+    force: no
+  tags: ['never', 'boot']
+
+- name: Resize image
+  command: qemu-img resize {{ instance_name|lower }}.img 25G
+  args:
+    chdir: "{{ storage }}"
+  tags: ['never', 'boot']
+
+- name: Define virtual machine
+  virt:
+    command: define
+    xml: "{{ lookup('template', 'domain.xml.j2') }}"
+    autostart: yes
+  tags: ['never', 'boot']
+
+- name: Start virtual machine
+  virt:
+    name: "{{ instance_name }}"
+    state: running
+
+- name: Get IP address of virtual machine
+  shell: "virsh domifaddr {{ instance_name }} | grep ipv4 | head -n1 | awk '{print $4}' | awk -F'/' '{print $1}'"
+  register: machine_ip
+
+- debug:
+    msg: "{{ machine_ip.stdout }}"
+
+- name: Update inventory
+  add_host:
+    name: "{{ instance_name|lower }}"
+    hostname: "{{ machine_ip.stdout }}"
+    ansible_host: "{{ machine_ip.stdout }}"
+    ansible_ssh_user: "{{ user_name }}"
+    ansible_ssh_pass: "{{ password }}"
+    groups: machines
+  when: machine_ip.stdout != ""

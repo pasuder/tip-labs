@@ -1,0 +1,2 @@
+[servers]
+jumpbox ansible_ssh_user=root
