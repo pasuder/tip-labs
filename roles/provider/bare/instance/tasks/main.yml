@@ -46,7 +46,6 @@
 - name: Update inventory
   add_host:
     name: "{{ instance_name|lower }}"
-    hostname: "{{ machine_ip.stdout }}"
     ansible_host: "{{ machine_ip.stdout }}"
     ansible_ssh_user: "{{ user_name }}"
     ansible_ssh_pass: "{{ password }}"

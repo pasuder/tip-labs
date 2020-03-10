@@ -1,0 +1,14 @@
+---
+
+- hosts: localhost
+  gather_facts: false
+  vars:
+    instance_name: K8sOnOpenStack
+    flavor_name: s1-8
+  roles:
+  - provider/cloud/boot
+
+- hosts: machines
+  tags: ['never', 'install']
+  roles:
+  - k8s

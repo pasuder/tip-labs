@@ -1,0 +1,89 @@
+- name: Install go
+  snap:
+    name: go
+    classic: yes
+  become: yes
+
+- name: Install MikroK8s
+  snap:
+    name: microk8s
+    classic: yes
+  become: yes
+
+- name: Update permissions
+  user:
+    name: "{{ user_name }}"
+    append: yes
+    groups: microk8s
+  become: yes
+
+- name: Stop all kubectl
+  command: killall -q kubectl
+  ignore_errors: yes
+
+- name: Get kubectl
+  shell: |
+    curl -nc -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
+  args:
+    warn: false
+  become: yes
+
+- name: Setup permission
+  file:
+    name: /usr/local/bin/kubectl
+    mode: 0755
+  become: yes
+
+- name: Create kubeconfig directory
+  file:
+    name: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+
+- name: Get kubeconfig
+  shell: |
+    sudo microk8s.config | tee "${HOME}/.kube/config"
+
+- name: Set kubeconfig path fact
+  set_fact:
+    kubeconfigpath: "{{ ansible_env.HOME }}/.kube/config"
+
+- name: Enable DNS
+  command: /snap/bin/microk8s.enable dns
+  when: no
+
+- name: Add dashboard
+  command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta1/aio/deploy/recommended.yaml
+
+- name: Upload admin things
+  copy:
+    src: "{{ item }}"
+    dest: "{{ ansible_env.HOME }}/{{ item }}"
+  with_items:
+  - dashboard-adminuser.yml
+  - dashboard-adminrole.yml
+
+- name: Add admin things
+  command: "kubectl apply -f {{ item }}"
+  with_items:
+  - dashboard-adminuser.yml
+  - dashboard-adminrole.yml
+
+- name: Enable dashboard
+  shell: |
+    nohup kubectl proxy --address 0.0.0.0 </dev/null >/dev/null 2>&1 &
+  async: 10
+  poll: 0
+
+- name: Get token
+  shell: |
+    kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+  register: kubectl_token
+
+- name: Show token
+  debug:
+    msg: "{{ kubectl_token.stdout }}"
+
+- name: Use it!
+  debug:
+    msg: |
+      Please use `openstack server list` to verify if instance was created. SSH to that instance with option `-L 8001:localhost:8001`. You will be able to open a K8s dashboard with link: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/

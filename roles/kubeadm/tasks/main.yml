@@ -1,0 +1,26 @@
+- name: Update packages list and upgrade if needed
+  apt:
+    update_cache: true
+    upgrade: true
+  become: yes
+
+- name: Install packages
+  apt:
+    name: "{{ packages }}"
+  become: yes
+
+- name: Download repositories
+  git:
+    repo: "https://opendev.org/{{ item }}"
+    dest: "~/{{ item.split('/')[1] }}"
+    clone: yes
+    force: yes
+  with_items:
+    - openstack/openstack-helm-infra
+    - openstack/openstack-helm
+
+- name: Install OpenStack (manually!)
+  shell: |
+    ./tools/deployment/component/common/000-install-packages.sh
+    ./tools/deployment/developer/common/010-deploy-k8s.sh
+  when: no

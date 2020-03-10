@@ -1,0 +1,20 @@
+---
+
+- hosts: servers
+  tags: ['never', 'prepare']
+  roles:
+  - provider/bare/libvirt
+
+- hosts: servers
+  vars:
+    image: bionic-server-cloudimg-amd64.img
+    instance_name: OpenStackHelm
+    vcpu: 8
+    mem: 16384
+  roles:
+  - provider/bare/instance
+
+- hosts: machines
+  tags: ['never', 'install']
+  roles:
+  - openstack

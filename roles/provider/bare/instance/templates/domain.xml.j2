@@ -7,9 +7,9 @@
     </libosinfo:libosinfo>
   </metadata>
 
-  <memory unit='MiB'>24576</memory>
-  <currentMemory unit='MiB'>24576</currentMemory>
-  <vcpu placement='static'>12</vcpu>
+  <memory unit='MiB'>{{ mem }}</memory>
+  <currentMemory unit='MiB'>{{ mem }}</currentMemory>
+  <vcpu placement='static'>{{ vcpu }}</vcpu>
 
   <os>
     <type arch='x86_64' machine='pc-i440fx-2.8'>hvm</type>

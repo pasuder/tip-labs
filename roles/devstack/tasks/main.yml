@@ -54,3 +54,47 @@
     dest: "~/devstack/local.conf"
   become: true
   become_user: stack
+
+- name: Stack it! (manually, it will take time)
+  shell: "~/devstack/stack.sh"
+  become: true
+  become_user: stack
+  when: no
+
+- name: Build Kuryr-Kubernetes (manually)
+  shell: |
+    docker build -t kuryr/controller -f controller.Dockerfile .
+    docker build -t kuryr/cni -f cni.Dockerfile .
+  args:
+    chdir: "~/kuryr-kubernetes"
+  become: true
+  become_user: stack
+  when: no
+
+- name: Configure Kuryr-Kubernetes (manually)
+  shell: |
+    mkdir ~/kuryr-kubernetes/config
+    export KURYR_K8S_KURYR_PROJECT_ID=$(openstack project list | grep service | awk '{print $2}')
+    export KURYR_K8S_PROJECT_ID=$(openstack project list | grep k8s | awk '{print $2}')
+    export KURYR_K8S_POD_SUBNET_ID=$(openstack subnet list | grep k8s-pod | awk '{print $2}')
+    export KURYR_K8S_POD_SG=$(openstack security group list | grep pod | awk '{print $2}')
+    export KURYR_K8S_SERVICE_SUBNET_ID=$(openstack subnet list | grep k8s-service | awk '{print $2}')
+    export KURYR_K8S_PASSWORD=secret
+    export _IP=$(ip -4 addr show enp0s3 | grep inet | awk '{print $2}' | awk -F'/' '{print $1}')
+    export KURYR_K8S_API_ROOT="https://${_IP}:6443"
+    export KURYR_K8S_AUTH_URL="http://${_IP}/identity"
+    ~/kuryr-kubernetes/tools/generate_k8s_resource_definitions.sh ~/kuryr-kubernetes/config
+  become: true
+  become_user: stack
+  when: no
+
+- name: Run Kuryr-Kubernetes (manually)
+  shell: |
+    kubectl apply -f ~/kuryr-kubernetes/config/config_map.yml -n kube-system
+    kubectl apply -f ~/kuryr-kubernetes/config/certificates_secret.yml -n kube-system
+    kubectl apply -f ~/kuryr-kubernetes/config/service_account.yml -n kube-system
+    kubectl apply -f ~/kuryr-kubernetes/config/controller_deployment.yml -n kube-system
+    kubectl apply -f ~/kuryr-kubernetes/config/cni_ds.yml -n kube-system
+  become: true
+  become_user: stack
+  when: no

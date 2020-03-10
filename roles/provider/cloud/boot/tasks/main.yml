@@ -1,0 +1,35 @@
+- name: Add key
+  os_keypair:
+    name: temp
+    public_key_file: "{{ lookup('env','HOME') }}/.ssh/id_rsa.pub"
+  tags: [ 'never', 'prepare' ]
+
+- name: Create instance
+  os_server:
+    state: present
+    name: "{{ instance_name }}"
+    image: "{{ image_name }}"
+    key_name: temp
+    wait: yes
+    flavor: "{{ flavor_name }}"
+    network: "{{ network_name }}"
+    userdata: |
+      #!/usr/bin/env bash
+      sudo apt update
+      sudo apt install -y build-essential python python-dev python-pip python-setuptools
+  register: instance
+
+- name: Wait for SSH prompt (check if python is installed)
+  command: |
+    ssh -oBatchMode=yes -oStrictHostKeyChecking=no {{ user_name }}@{{ instance.server.public_v4 }} python
+  register: result
+  until: result is success
+  retries: 5
+  delay: 10
+
+- name: Add instances to inventory
+  add_host:
+    name: "{{ instance.server.name }}"
+    ansible_host: "{{ instance.server.public_v4 }}"
+    ansible_ssh_user: "{{ user_name }}"
+    groups: machines

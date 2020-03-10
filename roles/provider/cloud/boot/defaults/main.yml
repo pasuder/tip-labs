@@ -1,0 +1,4 @@
+flavor_name: s1-2  # NOTE: OVH flavor type
+image_name: "Ubuntu 18.04"  # NOTE: OVH image name
+network_name: Ext-Net  # NOTE: OVH external network
+user_name: ubuntu

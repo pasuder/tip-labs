@@ -1,0 +1,20 @@
+---
+
+- hosts: servers
+  tags: ['never', 'prepare']
+  roles:
+  - provider/bare/libvirt
+
+- hosts: servers
+  vars:
+    image: bionic-server-cloudimg-amd64.img
+    instance_name: OSMK8s
+    vcpu: 4
+    mem: 8192
+  roles:
+  - provider/bare/instance
+
+- hosts: machines
+  tags: ['never', 'install']
+  roles:
+  - kubeadm
