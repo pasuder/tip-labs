@@ -3,14 +3,15 @@
 - hosts: servers
   tags: ['never', 'prepare']
   roles:
-  - provider/bare/libvirt
+  - provider/bare/prepare
 
 - hosts: servers
   vars:
-    image: bionic-server-cloudimg-amd64.img
-    instance_name: DevStackKuryrKubernetes
+    instance_name: DevStack
+    cpu: 4
+    mem: 4096
   roles:
-  - provider/bare/instance
+  - provider/bare/boot
 
 - hosts: machines
   tags: ['never', 'install']

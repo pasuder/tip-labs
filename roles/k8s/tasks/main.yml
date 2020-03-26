@@ -48,11 +48,12 @@
     kubeconfigpath: "{{ ansible_env.HOME }}/.kube/config"
 
 - name: Enable DNS
-  command: /snap/bin/microk8s.enable dns
-  when: no
+  command: microk8s.enable dns
+  become: yes
 
-- name: Add dashboard
-  command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta1/aio/deploy/recommended.yaml
+- name: Enable dashboard
+  command: microk8s.enable dashboard
+  become: yes
 
 - name: Upload admin things
   copy:
@@ -86,4 +87,4 @@
 - name: Use it!
   debug:
     msg: |
-      Please use `openstack server list` to verify if instance was created. SSH to that instance with option `-L 8001:localhost:8001`. You will be able to open a K8s dashboard with link: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+      SSH to your instance with option `-L 8001:localhost:8001`. You will be able to open a K8s dashboard with link: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/

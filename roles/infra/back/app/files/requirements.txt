@@ -1,0 +1,16 @@
+docker
+gunicorn
+honcho
+python-dotenv
+websocket_client
+raven[flask]
+
+flask
+flask-dance
+flask-sockets
+
+flake8
+mock
+pycodestyle
+pylint
+stestr

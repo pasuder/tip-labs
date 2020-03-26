@@ -9,7 +9,7 @@
     state: present
     name: "{{ instance_name }}"
     image: "{{ image_name }}"
-    key_name: temp
+    key_name: default
     wait: yes
     flavor: "{{ flavor_name }}"
     network: "{{ network_name }}"
@@ -32,4 +32,6 @@
     name: "{{ instance.server.name }}"
     ansible_host: "{{ instance.server.public_v4 }}"
     ansible_ssh_user: "{{ user_name }}"
-    groups: machines
+    groups:
+    - machines
+    - front

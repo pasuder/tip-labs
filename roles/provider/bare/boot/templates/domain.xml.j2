@@ -9,12 +9,16 @@
 
   <memory unit='MiB'>{{ mem }}</memory>
   <currentMemory unit='MiB'>{{ mem }}</currentMemory>
-  <vcpu placement='static'>{{ vcpu }}</vcpu>
+  <vcpu placement='static'>{{ cpu }}</vcpu>
 
   <os>
     <type arch='x86_64' machine='pc-i440fx-2.8'>hvm</type>
     <boot dev='hd'/>
   </os>
+
+  <cpu mode='host-passthrough'>
+    <feature policy='require' name='vmx'/>
+  </cpu>
 
   <devices>
     <emulator>/usr/bin/kvm</emulator>

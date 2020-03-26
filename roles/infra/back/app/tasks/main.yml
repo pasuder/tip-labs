@@ -1,0 +1,126 @@
+- name: Download editor
+  docker_image:
+    name: theiaide/theia-python:latest
+    source: pull
+  become: yes
+
+- name: Create app dir
+  file:
+    path: /opt/app
+    state: directory
+  become: yes
+
+- name: Generate internal private key
+  openssl_privatekey:
+    path: /opt/app/internal.key
+  become: yes
+
+- name: Generate a CSR for internal certificate
+  openssl_csr:
+    path: /opt/app/internal.csr
+    privatekey_path: /opt/app/internal.key
+    common_name: internal
+  become: yes
+
+- name: Generate a self signed internal certificate
+  openssl_certificate:
+    path: /opt/app/internal.crt
+    privatekey_path: /opt/app/internal.key
+    csr_path: /opt/app/internal.csr
+    provider: selfsigned
+  become: yes
+
+- name: Copy app files
+  copy:
+    src: "{{ item }}"
+    dest: "/opt/app/{{ item }}"
+  with_items:
+  - app.Dockerfile
+  - theia.Dockerfile
+  - main.py
+  - Procfile
+  - requirements.txt
+  become: yes
+
+- name: Get latest kubectl
+  shell: |
+    curl -nc -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /opt/app/kubectl
+  args:
+    warn: false
+  become: yes
+
+- name: Setup permission for kubectl
+  file:
+    name: /opt/app/kubectl
+    mode: 0755
+  become: yes
+
+- name: Set env
+  template:
+    src: .env.j2
+    dest: /opt/app/.env
+  become: yes
+
+- name: Build app
+  docker_image:
+    name: app
+    dockerfile: app.Dockerfile
+    path: /opt/app
+    source: build
+    force: yes
+  become: yes
+
+- name: Build theia
+  docker_image:
+    name: theia
+    dockerfile: theia.Dockerfile
+    path: /opt/app
+    source: build
+    force: yes
+  become: yes
+
+- name: Create directory for users
+  file:
+    path: /opt/app/users
+    state: directory
+  become: yes
+
+- name: Create directory for projects
+  file:
+    path: /opt/app/projects
+    state: directory
+  become: yes
+
+- name: Create directory for SSH keys
+  file:
+    path: /opt/app/ssh
+    state: directory
+  become: yes
+
+- name: Start app
+  docker_container:
+    name: app
+    image: app
+    state: started
+    restart: yes
+    recreate: yes
+    networks:
+    - name: back
+    ports:
+    - "1234:5000"
+    volumes:
+    - "/var/run/docker.sock:/var/run/docker.sock"
+    - "/opt/app:/opt/app"
+  register: backend
+  become: yes
+
+- name: Configure backend
+  template:
+    src: backend.inc.j2
+    dest: ~/backend.inc
+
+- name: Download backend config
+  fetch:
+    src: ~/backend.inc
+    dest: tmp/
+    flat: yes

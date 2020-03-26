@@ -1,0 +1,118 @@
+- name: Create directory for Nginx configuration
+  file:
+    path: /etc/nginx
+    state: directory
+  become: true
+  become_user: root
+
+- name: Setup Nginx configuration
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  become: true
+  become_user: root
+
+- name: Create directory for application configuration
+  file:
+    path: /etc/nginx/conf.d
+    state: directory
+  become: true
+  become_user: root
+
+- name: Setup application configuration
+  template:
+    src: app.conf.j2
+    dest: /etc/nginx/conf.d/app.conf
+  become: true
+  become_user: root
+
+- name: Create directory for SSL
+  file:
+    path: /etc/ssl
+    state: directory
+  become: true
+  become_user: root
+
+- name: Generate private key
+  openssl_privatekey:
+    path: "/etc/ssl/{{ common_name }}.key"
+  become: true
+  become_user: root
+
+- name: Generate CSR for certificate
+  openssl_csr:
+    path: "/etc/ssl/{{ common_name }}.csr"
+    privatekey_path: "/etc/ssl/{{ common_name }}.key"
+    common_name: "{{ common_name }}"
+  become: true
+  become_user: root
+
+- name: Generate ACME account key
+  openssl_privatekey:
+    path: "/etc/ssl/acme-account-{{ common_name }}.key"
+  become: true
+  become_user: root
+
+- name: Prepare ACME challenge
+  acme_certificate:
+    acme_version: 2
+    terms_agreed: yes
+    acme_directory: "{{ acme_directory | default('https://acme-staging-v02.api.letsencrypt.org/directory') }}"
+    account_key_src: "/etc/ssl/acme-account-{{ common_name }}.key"
+    account_email: "{{ acme_account_email }}"
+    csr: "/etc/ssl/{{ common_name }}.csr"
+    dest: "/etc/ssl/{{ common_name }}.crt"
+    fullchain_dest: "/etc/ssl/{{ common_name }}-fullchain.crt"
+    force: no
+  register: challenge
+  become: true
+  become_user: root
+
+- name: Store ACME challenge
+  template:
+    src: acme.inc.j2
+    dest: /etc/nginx/conf.d/acme.inc
+  when: challenge is changed
+  become: true
+  become_user: root
+
+- name: Start Nginx
+  docker_container:
+    name: nginx
+    image: nginx
+    state: started
+    restart: yes
+    volumes:
+    - /etc/ssl:/etc/ssl
+    - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf
+    - /etc/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+    - name: front
+    ports:
+    - "80:80"
+    - "443:443"
+  become: true
+  become_user: root
+
+- name: Validate ACME challenge and retrieve certificates
+  acme_certificate:
+    acme_version: 2
+    terms_agreed: yes
+    acme_directory: "{{ acme_directory | default('https://acme-staging-v02.api.letsencrypt.org/directory') }}"
+    account_key_src: "/etc/ssl/acme-account-{{ common_name }}.key"
+    account_email: "{{ acme_account_email }}"
+    csr: "/etc/ssl/{{ common_name }}.csr"
+    dest: "/etc/ssl/{{ common_name }}.crt"
+    fullchain_dest: "/etc/ssl/{{ common_name }}-fullchain.crt"
+    chain_dest: "/etc/ssl/{{ common_name }}-intermediate.crt"
+    data: "{{ challenge }}"
+    force: no
+  become: true
+  become_user: root
+
+- name: Setup application configuration with SSL
+  template:
+    src: app.ssl.conf.j2
+    dest: /etc/nginx/conf.d/app.ssl.conf
+  become: true
+  become_user: root

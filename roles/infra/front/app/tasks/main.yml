@@ -1,0 +1,12 @@
+- name: Upload backend config
+  copy:
+    src: tmp/backend.inc
+    dest: /etc/nginx/conf.d/backend.inc
+  become: yes
+
+- name: Restart Nginx
+  docker_container:
+    name: nginx
+    state: started
+    restart: yes
+  become: yes

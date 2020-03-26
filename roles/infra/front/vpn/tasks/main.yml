@@ -1,0 +1,28 @@
+- name: Generate shared key
+  shell: |
+    openvpn --genkey --secret /etc/openvpn/static.key
+  become: yes
+
+- name: Download shared key
+  fetch:
+    src: /etc/openvpn/static.key
+    dest: tmp/
+    flat: yes
+  become: yes
+
+- name: Configure tunnel
+  template:
+    src: tunnel.conf.j2
+    dest: /etc/openvpn/tunnel.conf
+  become: yes
+
+- name: Enable tunnel
+  service:
+    name: openvpn@tunnel
+    state: restarted
+  become: yes
+
+- name: Add route
+  shell: |
+    ip route replace 10.201.0.0/24 via 10.0.0.2
+  become: yes

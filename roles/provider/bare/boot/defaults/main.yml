@@ -1,0 +1,3 @@
+image: bionic-server-cloudimg-amd64.img
+cpu: 2
+mem: 2048

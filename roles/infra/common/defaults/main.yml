@@ -1,0 +1,20 @@
+---
+
+packages:
+- "apt-transport-https"
+- "ca-certificates"
+- "curl"
+- "gnupg2"
+- "openvpn"
+- "python"
+- "python-apt"
+- "python-dev"
+- "python-pip"
+- "python-setuptools"
+- "software-properties-common"
+
+pip_packages:
+- "setuptools"
+- "docker"
+- "docker-compose"
+- "pyOpenSSL"

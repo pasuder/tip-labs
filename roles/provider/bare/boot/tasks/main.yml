@@ -19,7 +19,7 @@
   tags: ['never', 'boot']
 
 - name: Resize image
-  command: qemu-img resize {{ instance_name|lower }}.img 25G
+  command: qemu-img resize {{ instance_name|lower }}.img {{ size|default('25') }}G
   args:
     chdir: "{{ storage }}"
   tags: ['never', 'boot']
@@ -49,5 +49,7 @@
     ansible_host: "{{ machine_ip.stdout }}"
     ansible_ssh_user: "{{ user_name }}"
     ansible_ssh_pass: "{{ password }}"
-    groups: machines
+    groups:
+    - machines
+    - back
   when: machine_ip.stdout != ""

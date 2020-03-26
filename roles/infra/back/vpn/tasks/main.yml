@@ -1,0 +1,22 @@
+- name: Upload shared key
+  copy:
+    src: tmp/static.key
+    dest: /etc/openvpn/static.key
+  become: yes
+
+- name: Configure tunnel
+  template:
+    src: tunnel.conf.j2
+    dest: /etc/openvpn/tunnel.conf
+  become: yes
+
+- name: Enable tunnel
+  service:
+    name: openvpn@tunnel
+    state: restarted
+  become: yes
+
+- name: Add route
+  shell: |
+    ip route replace 10.200.0.0/24 via 10.0.0.1
+  become: yes

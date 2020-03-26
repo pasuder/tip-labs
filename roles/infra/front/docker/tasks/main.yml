@@ -1,0 +1,6 @@
+- name: Create front docker network
+  docker_network:
+    name: front
+    ipam_config:
+    - subnet: 10.200.0.0/24
+  become: yes

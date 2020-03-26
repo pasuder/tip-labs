@@ -1,0 +1,43 @@
+---
+
+- hosts: localhost
+  gather_facts: false
+  vars:
+    instance_name: TIPInfraFront
+  roles:
+  - provider/cloud/boot
+
+- hosts: front
+  tags: ['never', 'install']
+  vars_files:
+  - "config.yml"
+  roles:
+  - infra/common
+  - infra/front/docker
+  - infra/front/dns
+  - infra/front/vpn  # TODO: missing extra static routes configuration
+  - infra/front/web  # TODO: cannot generated certificate from CSR with SANs
+
+- hosts: servers
+  vars:
+    instance_name: TIPInfraBack
+    cpu: 16
+    mem: 65536
+    size: 400
+  roles:
+  - provider/bare/boot
+
+- hosts: back
+  tags: ['never', 'install']
+  vars_files:
+  - "config.yml"
+  roles:
+  - infra/common
+  - infra/back/docker
+  - infra/back/vpn
+  - infra/back/app  # TODO: missing email check
+
+- hosts: front
+  tags: ['never', 'install']
+  roles:
+  - infra/front/app

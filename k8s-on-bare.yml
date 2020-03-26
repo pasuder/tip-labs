@@ -1,0 +1,17 @@
+---
+
+- hosts: servers
+  tags: ['never', 'prepare']
+  roles:
+  - provider/bare/prepare
+
+- hosts: servers
+  vars:
+    instance_name: K8s
+  roles:
+  - provider/bare/boot
+
+- hosts: machines
+  tags: ['never', 'install']
+  roles:
+  - k8s
